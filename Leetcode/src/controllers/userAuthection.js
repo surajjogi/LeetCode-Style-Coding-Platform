@@ -3,13 +3,13 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const validate = require("../utils/validate");
 const jwt = require("jsonwebtoken");
-const requirClient=require("../config/redis");
+const requirClient = require("../config/redis");
 const redisClient = require("../config/redis");
-const useMiddleware=require('../middleware/userMiddleware')
-const Submission=require("../models/submission")
+const useMiddleware = require('../middleware/userMiddleware')
+const Submission = require("../models/submission")
 //register feature
 // const register = async (req, res) => {
-    
+
 //     try {
 //         validate(req.body);
 
@@ -28,17 +28,17 @@ const Submission=require("../models/submission")
 // };
 const register = async (req, res) => {
   try {
-   
+
     validate(req.body);
     const { firstName, lastName, emailId, password } = req.body;
 
     // 1. Hash the password before saving!
     const passwordHash = await bcrypt.hash(password, 10);
-   //chec user before tying to create
-     const existingUser = await User.findOne({ emailId });
+    //chec user before tying to create
+    const existingUser = await User.findOne({ emailId });
     if (existingUser) {
-      return res.status(400).json({ 
-        error: "Email already registered. Please login or use another email." 
+      return res.status(400).json({
+        error: "Email already registered. Please login or use another email."
       });
     }
     // 2. Create user with the hashed password
@@ -48,22 +48,22 @@ const register = async (req, res) => {
       emailId,
       password: passwordHash,
     });
- 
-req.body.role=user;
-const reply={
-    firstName:user.firstName,
-    emailId:user.emailId,
-    _id:user._id,
-    role:user.role
-   }
 
-   
+    req.body.role = user;
+    const reply = {
+      firstName: user.firstName,
+      emailId: user.emailId,
+      _id: user._id,
+      role: user.role
+    }
+
+
     const token = jwt.sign({ _id: user._id, emailId: emailId, role: 'user' }, process.env.JWT_KEY, { expiresIn: "1h" });
-    res.cookie("token", token);
+    res.cookie("token", token, { sameSite: 'none', secure: true });
     // res.status(201).send("User Registered Successfully");
-     res.status(200).send({
-      user:reply,
-      meassage:"User Register sucessfully"
+    res.status(200).send({
+      user: reply,
+      meassage: "User Register sucessfully"
     })
   } catch (err) {
     res.status(400).send("Error: " + err.message);
@@ -97,7 +97,7 @@ const reply={
 //     catch (err) {
 //         res.status(401).send("Error:" + err);
 //     }
- 
+
 
 
 // };
@@ -109,22 +109,22 @@ const login = async (req, res) => {
     const user = await User.findOne({ emailId });
     if (!user) throw new Error("Invalid Credentials");
 
-   const reply={
-    firstName:user.firstName,
-    emailId:user.emailId,
-    _id:user._id,
-    role:user.role
-   }
+    const reply = {
+      firstName: user.firstName,
+      emailId: user.emailId,
+      _id: user._id,
+      role: user.role
+    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error("Invalid Credentials");
 
     const token = jwt.sign({ _id: user._id, emailId: emailId, role: user.role }, process.env.JWT_KEY, { expiresIn: '1h' });
-    res.cookie("token", token);
+    res.cookie("token", token, { sameSite: 'none', secure: true });
     // res.send("Logged in successfully");
 
     res.status(200).send({
-      user:reply,
-      meassage:"Login sucessfully"
+      user: reply,
+      meassage: "Login sucessfully"
     })
   } catch (err) {
     res.status(401).send("Error: " + err.message);
@@ -143,28 +143,28 @@ const login = async (req, res) => {
 //use redis method
 const logout = async (req, res) => {
   try {
-    const {token}=req.cookies;
-    const payload=jwt.decode(token);
-  await redisClient.set(`token:${token}`,"blocked Token")
- await redisClient.expireAt(`token:${token}`,payload.exp);
- res.cookie("token",null,{expires:new Date(0)})
+    const { token } = req.cookies;
+    const payload = jwt.decode(token);
+    await redisClient.set(`token:${token}`, "blocked Token")
+    await redisClient.expireAt(`token:${token}`, payload.exp);
+    res.cookie("token", null, { expires: new Date(0), sameSite: 'none', secure: true })
     res.send("Logged out successfully");
- } catch (err) {
-   res.status(500).send("Logout failed: " + err.message);
- }
+  } catch (err) {
+    res.status(500).send("Logout failed: " + err.message);
+  }
 
 };
 
-const adminRegister=async (req,res)=>{
-try {
+const adminRegister = async (req, res) => {
+  try {
     validate(req.body);
-      const {firstName, emailId, password}  = req.body;
+    const { firstName, emailId, password } = req.body;
     // 1. Hash the password before saving!
     req.body.password = await bcrypt.hash(password, 10);
     // 2. Create user with the hashed password
-        const user =  await User.create(req.body);
-   const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-    res.cookie('token',token,{maxAge: 60*60*1000});
+    const user = await User.create(req.body);
+    const token = jwt.sign({ _id: user._id, emailId: emailId, role: user.role }, process.env.JWT_KEY, { expiresIn: 60 * 60 });
+    res.cookie('token', token, { maxAge: 60 * 60 * 1000, sameSite: 'none', secure: true });
     res.status(201).send("Admin Registered Successfully");
   } catch (err) {
     res.status(400).send("Error: " + err.message);
@@ -173,22 +173,22 @@ try {
 
 }
 
-const deleteProfile=async(req,res)=>{
-try {
-  const userId=req.params._id;
-//delete the schema
- await User.findByIdAndDelete(userId)
-//delete also submission which stroed by user
-//we use post middleware insead of this. 
-// await Submission.deleteMany({userId})    
+const deleteProfile = async (req, res) => {
+  try {
+    const userId = req.params._id;
+    //delete the schema
+    await User.findByIdAndDelete(userId)
+    //delete also submission which stroed by user
+    //we use post middleware insead of this. 
+    // await Submission.deleteMany({userId})    
 
-res.status(200).send("deleted sucessfully")
+    res.status(200).send("deleted sucessfully")
 
-} catch (err) {
-  res.status(501).send("server internal error")
+  } catch (err) {
+    res.status(501).send("server internal error")
+  }
+
+
+
 }
-
-
-
-}
-module.exports={login,register,logout,adminRegister,deleteProfile}
+module.exports = { login, register, logout, adminRegister, deleteProfile }
