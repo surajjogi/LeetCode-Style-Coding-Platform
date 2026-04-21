@@ -5,7 +5,8 @@ const submitCode = async (req, res) => {
   try {
     const userId = req.result._id;
     const problemId = req.params.id;
-    const { language, code } = req.body;
+    let { language, code } = req.body;
+    if (language === "cpp") language = "c++";
     if (!language || !code || !problemId || !userId) {
       return res.status(400).send("some missing field");
     }
@@ -28,9 +29,20 @@ const submitCode = async (req, res) => {
 
     const languageId = getLanguageById(language);
     //give the code to the judgeo
+    let finalCode = code;
+    if (problem.hiddenDriverCode && problem.hiddenDriverCode.length > 0) {
+      const driver = problem.hiddenDriverCode.find(h => h.language.toLowerCase() === language.toLowerCase() || h.language.toLowerCase() === (language === "cpp" ? "c++" : language));
+      if (driver && driver.initialCode) {
+        if (driver.initialCode.includes("// USER_CODE_HERE")) {
+          finalCode = driver.initialCode.replace("// USER_CODE_HERE", code);
+        } else {
+          finalCode = code + "\n\n" + driver.initialCode;
+        }
+      }
+    }
 
     const submissions = problem.hiddenTestCases.map((testcase) => ({
-      source_code: code,
+      source_code: finalCode,
       language_id: languageId,
       stdin: testcase.input,
       expected_output: testcase.output,
@@ -52,12 +64,12 @@ const submitCode = async (req, res) => {
         runtime = runtime + parseFloat(test.time);
         memory = Math.max(memory, test.memory);
       } else {
-        if (test.status_id == 4) {
+        if (test.status_id == 4 || test.status_id == 6) {
           status = "error";
-          errorMessage = test.stderr;
+          errorMessage = test.compile_output || test.stderr || test.message;
         } else {
           status = "wrong";
-          errorMessage = test.stderr;
+          errorMessage = test.compile_output || test.stderr || test.message;
         }
       }
     }
@@ -84,6 +96,7 @@ const submitCode = async (req, res) => {
       passedTestCases: testCasesPassed,
       runtime,
       memory,
+      error: errorMessage,
     });
   } catch (err) {
     res.status(500).send("Internal Server Error " + err);
@@ -110,8 +123,20 @@ const runCode = async (req, res) => {
 
     const languageId = getLanguageById(language);
 
+    let finalCode = code;
+    if (problem.hiddenDriverCode && problem.hiddenDriverCode.length > 0) {
+      const driver = problem.hiddenDriverCode.find(h => h.language.toLowerCase() === language.toLowerCase() || h.language.toLowerCase() === (language === "cpp" ? "c++" : language));
+      if (driver && driver.initialCode) {
+        if (driver.initialCode.includes("// USER_CODE_HERE")) {
+          finalCode = driver.initialCode.replace("// USER_CODE_HERE", code);
+        } else {
+          finalCode = code + "\n\n" + driver.initialCode;
+        }
+      }
+    }
+
     const submissions = problem.visibleTestCases.map((testcase) => ({
-      source_code: code,
+      source_code: finalCode,
       language_id: languageId,
       stdin: testcase.input,
       expected_output: testcase.output,

@@ -185,7 +185,7 @@ function Homepage() {
     const filteredProblems = problem.filter((problem) => {
         const difficultyMatch =
             filters.difficulty === "all" || problem.difficulty === filters.difficulty;
-        const tagsMatch = filters.tags === "all" || problem.tags === filters.tags;
+        const tagsMatch = filters.tags === "all" || (problem.tags && problem.tags.toLowerCase() === filters.tags.toLowerCase());
         const statusMatch =
             filters.status === "all" ||
             solvedProblem.some((sp) => sp._id === problem._id);
@@ -229,7 +229,7 @@ function Homepage() {
                                         Logout
                                     </button>
                                 </li>
-                                 {user.role=='admin panel'&&<li className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-white/5 transition-colors flex items-center gap-2"><NavLink to="/admin">Admin</NavLink></li>}
+                                 {user.role === 'admin' && <li className="w-full px-4 py-3 text-left text-sm text-purple-400 hover:bg-white/5 transition-colors flex items-center gap-2"><NavLink to="/admin" className="w-full">Admin Panel</NavLink></li>}
                             </ul>
                         </div>
                     </div>
@@ -296,13 +296,13 @@ function Homepage() {
 
                     <select
                         value={filters.tags}
-                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white/70 focus:outline-none focus:border-purple-400/50 transition-colors cursor-pointer"
+                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white/70 focus:outline-none focus:border-purple-400/50 transition-colors cursor-pointer capitalize"
                         onChange={(e) => setFilters({ ...filters, tags: e.target.value })}
                     >
                         <option value="all" className="bg-black">all tags</option>
-                        <option value="array" className="bg-black">array</option>
-                        <option value="linkedList" className="bg-black">linked list</option>
-                        <option value="dp" className="bg-black">dp</option>
+                        {[...new Set(problem.map(p => p.tags?.toLowerCase()).filter(Boolean))].map(tag => (
+                            <option key={tag} value={tag} className="bg-black capitalize">{tag}</option>
+                        ))}
                     </select>
                 </div>
 
@@ -312,9 +312,10 @@ function Homepage() {
                         const isSolved = solvedProblem.some(sp => sp._id === problem._id);
                         
                         return (
-                            <div
+                            <NavLink
+                                to={`/problem/${problem._id}`}
                                 key={problem._id}
-                                className="group relative"
+                                className="group relative block"
                             >
                                 {/* Card */}
                                 <div className={`
@@ -368,7 +369,7 @@ function Homepage() {
 
                                 {/* Subtle glow on hover */}
                                 <div className="absolute inset-0 -z-10 bg-purple-500/0 group-hover:bg-purple-500/5 rounded-lg blur-xl transition-colors duration-200" />
-                            </div>
+                            </NavLink>
                         );
                     })}
 

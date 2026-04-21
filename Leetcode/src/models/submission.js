@@ -42,7 +42,7 @@ memory:{
     type:Number,
     default:0
 },
-   errorMeassage:{
+   errorMessage:{
     type:String,
     default:''
    },

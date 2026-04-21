@@ -53,7 +53,8 @@ req.body.role=user;
 const reply={
     firstName:user.firstName,
     emailId:user.emailId,
-    _id:user._id
+    _id:user._id,
+    role:user.role
    }
 
    
@@ -111,7 +112,8 @@ const login = async (req, res) => {
    const reply={
     firstName:user.firstName,
     emailId:user.emailId,
-    _id:user._id
+    _id:user._id,
+    role:user.role
    }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error("Invalid Credentials");

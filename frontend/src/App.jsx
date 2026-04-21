@@ -37,6 +37,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import AdminPanel from "./pages/AdminPanel";
 import ProblemPage from "./pages/ProblemPage";
+import { Toaster } from "react-hot-toast";
+
 function App() {
   //check this person is authenticated or not if not then go to login and signup page else go to homepage
   const { isAuthenticated,user,loading } = useSelector((state) => state.auth);
@@ -56,13 +58,16 @@ function App() {
 
   }
   return (
-    <Routes>
-       <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
-      <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
-      <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
-     <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel/> : <Navigate to="/" />} />
-      <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
-    </Routes>
+    <>
+      <Toaster position="top-right" />
+      <Routes>
+         <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
+        <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
+        <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
+       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel/> : <Navigate to="/" />} />
+        <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
+      </Routes>
+    </>
   );
 }
 

@@ -17,7 +17,6 @@ const problemSchema = new Schema({
   },
   tags: {
     type: String,
-    enum: ["array", "linkedlist", "dynamic programming", "graph","simple"],
     required: true,
   },
   visibleTestCases: [
@@ -51,6 +50,18 @@ const problemSchema = new Schema({
   ],
 
   startCode: [
+    {
+      language: {
+        type: String,
+        required: true,
+      },
+      initialCode: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
+  hiddenDriverCode: [
     {
       language: {
         type: String,

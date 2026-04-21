@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { loginUser } from "../authSlice";
 import { useEffect } from "react";
 import { NavLink } from "react-router";
+import { toast } from "react-hot-toast";
 // Simplified schema for login only
 const loginSchema = z.object({
   emailId: z.string().email("Please enter a valid email address"),
@@ -21,20 +22,27 @@ function Login() {
   const {
     register,
     handleSubmit,
-    formState: { errors,isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
   useEffect(() => {
     if (isAuthenticated) {
+      toast.success("Successfully logged in!");
       navigate("/");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const submittedData = async (data) => {
     // Simulate API call
-  
+
     await new Promise((resolve) => setTimeout(resolve, 1000));
     dispatch(loginUser(data));
   };
@@ -45,7 +53,7 @@ function Login() {
         <div className="card-body">
           {/* Logo/Header */}
           <div className="text-center mb-6">
-            <h1 className="text-4xl font-bold text-warning mb-2">LEETCODE</h1>
+            <h1 className="text-4xl font-bold text-warning mb-2">Code/Arena</h1>
             <p className="text-gray-500">
               Welcome back! Please login to your account
             </p>
