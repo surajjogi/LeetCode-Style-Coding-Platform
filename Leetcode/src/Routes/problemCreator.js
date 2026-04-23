@@ -3,13 +3,15 @@ const problemRouter=express.Router();
 const {createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblemByUser,submittedProblem}=require('../controllers/userProblem')
 
 const adminMiddleware=require('../middleware/adminMiddleware.js')
+const demoAdminMiddleware=require('../middleware/demoAdminMiddleware.js')
 const userMiddleware=require("../middleware/userMiddleware.js")
-//we need the admin access for 5,6,7 route 
-problemRouter.post("/create",adminMiddleware,createProblem);
-problemRouter.put("/update/:id",adminMiddleware,updateProblem);
-problemRouter.delete("/delete/:id",adminMiddleware,deleteProblem);
 
- 
+// ── Write routes: blocked for demoAdmin ─────────────────────────────────────
+problemRouter.post("/create",  adminMiddleware, demoAdminMiddleware, createProblem);
+problemRouter.put("/update/:id", adminMiddleware, demoAdminMiddleware, updateProblem);
+problemRouter.delete("/delete/:id", adminMiddleware, demoAdminMiddleware, deleteProblem);
+
+// ── Read routes: accessible to all authenticated users ───────────────────────
 problemRouter.get("/problemSolvedByUser",userMiddleware,solvedAllProblemByUser);
 problemRouter.get("/getAllProblem",userMiddleware,getAllProblem);
 problemRouter.get("/problemById/:id",userMiddleware,getProblemById);

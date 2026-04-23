@@ -84,9 +84,6 @@ An enterprise-grade, full-stack competitive programming platform that enables us
 
 ---
 
-<div align="center">
-  <b>Built with ❤️ by Suraj Jogi</b>
-</div>
 
 
 ## ⚠️ Important Notes & Troubleshooting
@@ -97,6 +94,40 @@ An enterprise-grade, full-stack competitive programming platform that enables us
 
 ## 🔑 Demo Access
 
-### Admin Demo
-Email:zq@gmail.com 
-Password:Suraj123@
+> **Note:** The Admin Panel button in the navbar only appears for admin/demoAdmin roles.
+
+### 👤 Regular User
+| Field | Value |
+|-------|-------|
+| Email | `user@demo.com` |
+| Password | `User@1234` |
+
+> Sign up freely with any email to create a regular user account.
+
+---
+
+### 🛡️ Demo Admin *(Read-Only — Safe for Reviewers)*
+
+| Field | Value |
+|-------|-------|
+| Email | `demo@admin.com` |
+| Password | `Demo@1234` |
+| Role | `demoAdmin` |
+
+**This account can:**
+- ✅ Log into the Admin Panel
+- ✅ View all users and platform statistics
+- ✅ Browse all problems
+
+**This account CANNOT:**
+- 🚫 Create new problems
+- 🚫 Update or delete problems
+- 🚫 Delete users or change user roles
+
+> ⚠️ **All destructive actions are blocked server-side for this account**, regardless of the UI. Your data is safe.
+
+---
+
+<div align="center">
+  <b>Built with ❤️ by Suraj Jogi</b>
+</div>

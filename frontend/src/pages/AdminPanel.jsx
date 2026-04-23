@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -392,6 +392,280 @@ function ProblemsList({ onEdit, onRefresh, refreshKey }) {
   );
 }
 
+// ── Users Tab ────────────────────────────────────────────────────────────────
+function UsersTab() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [actionId, setActionId] = useState(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setApiError(null);
+    try {
+      const { data } = await axiosClient.get("/user/admin/users");
+      setUsers(data.users || []);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data || err.message;
+      setApiError(String(msg));
+      toast.error("Failed to fetch users: " + msg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+    setActionId(id + "-del");
+    try {
+      await axiosClient.delete(`/user/admin/users/${id}`);
+      setUsers(prev => prev.filter(u => u._id !== id));
+      toast.success("User deleted");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Delete failed");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleRoleToggle = async (u) => {
+    const newRole = u.role === "admin" ? "user" : "admin";
+    setActionId(u._id + "-role");
+    try {
+      await axiosClient.patch(`/user/admin/users/${u._id}/role`, { role: newRole });
+      setUsers(prev => prev.map(x => x._id === u._id ? { ...x, role: newRole } : x));
+      toast.success(`Role updated to ${newRole}`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Role update failed");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const filtered = users.filter(u => {
+    const q = search.toLowerCase();
+    const matchSearch = u.firstName?.toLowerCase().includes(q) || u.emailId?.toLowerCase().includes(q);
+    const matchRole = roleFilter === "all" || u.role === roleFilter;
+    return matchSearch && matchRole;
+  });
+
+  return (
+    <div>
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        {[
+          { label: "Total Users", value: users.length, color: "text-purple-400" },
+          { label: "Admins", value: users.filter(u => u.role === "admin").length, color: "text-yellow-400" },
+          { label: "Regular Users", value: users.filter(u => u.role === "user").length, color: "text-blue-400" },
+        ].map(s => (
+          <div key={s.label} className="bg-white/5 rounded-xl p-5 border border-white/5">
+            <div className={`text-3xl font-light ${s.color}`}>{s.value}</div>
+            <div className="text-xs text-white/40 uppercase tracking-wider mt-1">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Search by name or email…"
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-purple-400/50 transition-colors" />
+        <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white/70 focus:outline-none w-36 cursor-pointer">
+          <option value="all" className="bg-black">All Roles</option>
+          <option value="user" className="bg-black">User</option>
+          <option value="admin" className="bg-black">Admin</option>
+        </select>
+        <button onClick={fetchUsers} className="px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors text-sm">↻ Refresh</button>
+      </div>
+      {loading ? (
+        <div className="text-center py-16 text-white/40">Loading users…</div>
+      ) : apiError ? (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+          <div className="text-red-400 font-medium mb-2">⚠️ Failed to load users</div>
+          <div className="text-red-400/60 text-sm font-mono">{apiError}</div>
+          <div className="text-white/40 text-xs mt-3">Make sure the backend is running on <code className="text-purple-400">localhost:3000</code> and you are logged in as admin.</div>
+          <button onClick={fetchUsers} className="mt-4 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors text-sm">↻ Try Again</button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-white/40">No users found.</div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
+                <th className="text-left px-5 py-3.5">User</th>
+                <th className="text-left px-5 py-3.5">Email</th>
+                <th className="text-center px-4 py-3.5">Solved</th>
+                <th className="text-center px-4 py-3.5">Submissions</th>
+                <th className="text-center px-4 py-3.5">Accepted</th>
+                <th className="text-center px-4 py-3.5">Role</th>
+                <th className="text-center px-4 py-3.5">Joined</th>
+                <th className="text-right px-5 py-3.5">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((u, i) => (
+                <tr key={u._id} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${i % 2 === 0 ? "" : "bg-white/[0.02]"}`}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 text-xs font-semibold">
+                        {u.firstName?.[0]?.toUpperCase()}{u.lastName?.[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-white/80">{u.firstName} {u.lastName}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-white/50 font-mono text-xs">{u.emailId}</td>
+                  <td className="px-4 py-4 text-center">
+                    <span className="text-green-400 font-medium">{u.problemsSolved}</span>
+                  </td>
+                  <td className="px-4 py-4 text-center text-white/60">{u.totalSubmissions}</td>
+                  <td className="px-4 py-4 text-center text-blue-400">{u.acceptedSubmissions}</td>
+                  <td className="px-4 py-4 text-center">
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                      u.role === "admin" ? "bg-yellow-400/10 text-yellow-400 border border-yellow-400/20" : "bg-white/5 text-white/50 border border-white/10"
+                    }`}>{u.role}</span>
+                  </td>
+                  <td className="px-4 py-4 text-center text-white/40 text-xs">
+                    {new Date(u.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleRoleToggle(u)}
+                        disabled={actionId === u._id + "-role"}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 transition-colors disabled:opacity-40"
+                      >{actionId === u._id + "-role" ? "…" : u.role === "admin" ? "Demote" : "Promote"}</button>
+                      <button
+                        onClick={() => handleDelete(u._id, u.firstName)}
+                        disabled={actionId === u._id + "-del"}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-40"
+                      >{actionId === u._id + "-del" ? "…" : "Delete"}</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Stats Tab ─────────────────────────────────────────────────────────────────
+function StatsTab() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axiosClient.get("/user/admin/stats");
+        setStats(data);
+      } catch { toast.error("Failed to load stats"); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  if (loading) return <div className="text-center py-16 text-white/40">Loading stats…</div>;
+  if (!stats) return null;
+
+  const metricCards = [
+    { label: "Total Users", value: stats.totalUsers, color: "text-purple-400", bg: "from-purple-500/10" },
+    { label: "Total Problems", value: stats.totalProblems, color: "text-blue-400", bg: "from-blue-500/10" },
+    { label: "Total Submissions", value: stats.totalSubmissions, color: "text-yellow-400", bg: "from-yellow-500/10" },
+    { label: "Accepted", value: stats.acceptedSubmissions, color: "text-green-400", bg: "from-green-500/10" },
+    { label: "Acceptance Rate", value: `${stats.acceptanceRate}%`, color: "text-cyan-400", bg: "from-cyan-500/10" },
+  ];
+
+  return (
+    <div className="space-y-10">
+      {/* Big metric cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        {metricCards.map(m => (
+          <div key={m.label} className={`bg-gradient-to-br ${m.bg} to-transparent border border-white/10 rounded-xl p-5`}>
+            <div className={`text-3xl font-light ${m.color}`}>{m.value}</div>
+            <div className="text-xs text-white/40 uppercase tracking-wider mt-2">{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Difficulty breakdown */}
+      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+        <h3 className="text-lg font-light text-white/80 mb-6">Problems by Difficulty</h3>
+        <div className="grid grid-cols-3 gap-4">
+          {[
+            { label: "Easy", value: stats.problemsByDifficulty?.easy || 0, color: "text-green-400", bar: "bg-green-400" },
+            { label: "Medium", value: stats.problemsByDifficulty?.medium || 0, color: "text-yellow-400", bar: "bg-yellow-400" },
+            { label: "Hard", value: stats.problemsByDifficulty?.hard || 0, color: "text-red-400", bar: "bg-red-400" },
+          ].map(d => {
+            const pct = stats.totalProblems > 0 ? Math.round((d.value / stats.totalProblems) * 100) : 0;
+            return (
+              <div key={d.label} className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-white/60">{d.label}</span>
+                  <span className={`text-sm font-medium ${d.color}`}>{d.value} <span className="text-white/30">({pct}%)</span></span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div className={`h-full ${d.bar} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Recent Users */}
+        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+          <h3 className="text-base font-light text-white/80 mb-4">Recent Signups</h3>
+          <div className="space-y-3">
+            {stats.recentUsers?.map(u => (
+              <div key={u._id} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center text-purple-400 text-xs font-semibold">
+                  {u.firstName?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white/70 truncate">{u.firstName}</div>
+                  <div className="text-xs text-white/30">{new Date(u.createdAt).toLocaleDateString()}</div>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  u.role === "admin" ? "bg-yellow-400/10 text-yellow-400" : "bg-white/5 text-white/40"
+                }`}>{u.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Recent Submissions */}
+        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+          <h3 className="text-base font-light text-white/80 mb-4">Recent Submissions</h3>
+          <div className="space-y-3">
+            {stats.recentSubmissions?.map(s => (
+              <div key={s._id} className="flex items-center gap-3">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  s.status === 'accepted' ? 'bg-green-400' : s.status === 'wrong' ? 'bg-red-400' : 'bg-yellow-400'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-white/70 truncate">{s.problemId?.title || 'Unknown'}</div>
+                  <div className="text-xs text-white/30">by {s.userId?.firstName || 'Unknown'}</div>
+                </div>
+                <span className={`text-xs ${
+                  s.status === 'accepted' ? 'text-green-400' : s.status === 'wrong' ? 'text-red-400' : 'text-yellow-400'
+                }`}>{s.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main AdminPanel ──────────────────────────────────────────────────────────
 function AdminPanel() {
   const navigate = useNavigate();
@@ -423,6 +697,8 @@ function AdminPanel() {
   const tabs = [
     { id: "list", label: "All Problems" },
     { id: "create", label: "Create Problem" },
+    { id: "users", label: "👥 Users" },
+    { id: "stats", label: "📊 Stats" },
   ];
 
   return (
@@ -493,6 +769,10 @@ function AdminPanel() {
         {activeTab === "edit" && editingProblem && (
           <ProblemForm editingProblem={editingProblem} onSuccess={handleFormSuccess} onCancel={handleCancelEdit} />
         )}
+
+        {activeTab === "users" && <UsersTab />}
+
+        {activeTab === "stats" && <StatsTab />}
       </div>
     </div>
   );

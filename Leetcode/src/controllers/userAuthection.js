@@ -191,4 +191,87 @@ const deleteProfile = async (req, res) => {
 
 
 }
-module.exports = { login, register, logout, adminRegister, deleteProfile }
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    const Submission = require('../models/submission');
+    const Problem = require('../models/problem');
+
+    const usersWithStats = await Promise.all(
+      users.map(async (u) => {
+        const submissionCount = await Submission.countDocuments({ userId: u._id });
+        const acceptedCount = await Submission.countDocuments({ userId: u._id, status: 'accepted' });
+        return {
+          _id: u._id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          emailId: u.emailId,
+          role: u.role,
+          createdAt: u.createdAt,
+          problemsSolved: u.problemSolved ? u.problemSolved.length : 0,
+          totalSubmissions: submissionCount,
+          acceptedSubmissions: acceptedCount,
+        };
+      })
+    );
+
+    res.status(200).json({ users: usersWithStats, total: usersWithStats.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch users: ' + err.message });
+  }
+};
+
+const getPlatformStats = async (req, res) => {
+  try {
+    const Submission = require('../models/submission');
+    const Problem = require('../models/problem');
+
+    const [totalUsers, totalProblems, totalSubmissions, acceptedSubmissions,
+      easyCount, mediumCount, hardCount, recentUsers, recentSubmissions] = await Promise.all([
+        User.countDocuments(),
+        Problem.countDocuments(),
+        Submission.countDocuments(),
+        Submission.countDocuments({ status: 'accepted' }),
+        Problem.countDocuments({ difficulty: 'easy' }),
+        Problem.countDocuments({ difficulty: 'medium' }),
+        Problem.countDocuments({ difficulty: 'hard' }),
+        User.find({}).sort({ createdAt: -1 }).limit(5).select('firstName lastName emailId createdAt role'),
+        Submission.find({}).sort({ createdAt: -1 }).limit(5).populate('userId', 'firstName').populate('problemId', 'title'),
+      ]);
+
+    const acceptanceRate = totalSubmissions > 0 ? ((acceptedSubmissions / totalSubmissions) * 100).toFixed(1) : 0;
+
+    res.status(200).json({
+      totalUsers,
+      totalProblems,
+      totalSubmissions,
+      acceptedSubmissions,
+      acceptanceRate,
+      problemsByDifficulty: { easy: easyCount, medium: mediumCount, hard: hardCount },
+      recentUsers,
+      recentSubmissions,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch stats: ' + err.message });
+  }
+};
+
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be "user" or "admin"' });
+    }
+    if (req.result._id.toString() === id) {
+      return res.status(400).json({ error: 'Cannot change your own role' });
+    }
+    const updated = await User.findByIdAndUpdate(id, { role }, { new: true, runValidators: true }).select('-password');
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json({ user: updated, message: 'Role updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update role: ' + err.message });
+  }
+};
+
+module.exports = { login, register, logout, adminRegister, deleteProfile, getAllUsers, getPlatformStats, updateUserRole }

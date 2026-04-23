@@ -64,7 +64,7 @@ function App() {
          <Route path="/" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
         <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
         <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
-       <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel/> : <Navigate to="/" />} />
+       <Route path="/admin" element={isAuthenticated && (user?.role === 'admin' || user?.role === 'demoAdmin') ? <AdminPanel/> : <Navigate to="/" />} />
         <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
       </Routes>
     </>

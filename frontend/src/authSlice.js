@@ -5,10 +5,10 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
-    const response =  await axiosClient.post('/user/register', userData);
-    return response.data.user;
+      const response = await axiosClient.post('/user/register', userData);
+      return response.data.user;
     } catch (error) {
-     
+
       return rejectWithValue(serializeAxiosError(error));
     }
   }
@@ -21,7 +21,7 @@ export const loginUser = createAsyncThunk(
     try {
       console.log(credentials)
       const response = await axiosClient.post('/user/login', credentials);
-      
+
       return response.data.user;
     } catch (error) {
       return rejectWithValue(serializeAxiosError(error));
@@ -32,14 +32,17 @@ export const checkAuth = createAsyncThunk(
   'auth/check',
   async (_, { rejectWithValue }) => {
     try {
-        console.log('Checking auth with token:', localStorage.getItem('token'));
+      console.log('Checking auth with token:', localStorage.getItem('token'));
       const { data } = await axiosClient.get('/user/check');
+      console.log(data);
+      console.log("hello")
+
       return data.user;
     } catch (error) {
-       if (error.response?.status === 401) {
-        return rejectWithValue({ 
-          status: 401, 
-          message: 'Unauthorized' 
+      if (error.response?.status === 401) {
+        return rejectWithValue({
+          status: 401,
+          message: 'Unauthorized'
         });
       }
       return rejectWithValue(serializeAxiosError(error));
@@ -87,7 +90,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
       })
-  
+
       // Login User Cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -104,7 +107,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
       })
-  
+
       // Check Auth Cases
       .addCase(checkAuth.pending, (state) => {
         state.loading = true;
@@ -121,7 +124,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
       })
-  
+
       // Logout User Cases
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;

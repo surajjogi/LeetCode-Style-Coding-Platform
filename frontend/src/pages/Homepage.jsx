@@ -229,7 +229,7 @@ function Homepage() {
                                         Logout
                                     </button>
                                 </li>
-                                 {user.role === 'admin' && <li className="w-full px-4 py-3 text-left text-sm text-purple-400 hover:bg-white/5 transition-colors flex items-center gap-2"><NavLink to="/admin" className="w-full">Admin Panel</NavLink></li>}
+                                 {(user.role === 'admin' || user.role === 'demoAdmin') && <li className="w-full px-4 py-3 text-left text-sm text-purple-400 hover:bg-white/5 transition-colors flex items-center gap-2"><NavLink to="/admin" className="w-full">Admin Panel {user.role === 'demoAdmin' && <span className="text-xs text-white/30 ml-1">(read-only)</span>}</NavLink></li>}
                             </ul>
                         </div>
                     </div>

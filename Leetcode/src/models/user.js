@@ -28,7 +28,7 @@ immutable:true
     },
     role:{
         type:String,
-        enum:['user','admin'],
+        enum:['user','admin','demoAdmin'],
         default:'user'
     },
     problemSolved:{
