@@ -15,6 +15,14 @@ An enterprise-grade, full-stack competitive programming platform that enables us
 </div>
 
 ---
+## ✨ project review
+<img width="775" height="798" alt="Screenshot 2026-04-19 014050" src="https://github.com/user-attachments/assets/76e81248-8e0f-4f72-858e-ab19ea94bf06" />
+<img width="1836" height="869" alt="Screenshot 2026-04-19 014003" src="https://github.com/user-attachments/assets/a62b2531-4070-43a5-aef0-8190b620aedc" />
+<img width="1737" height="816" alt="Screenshot 2026-04-19 014219" src="https://github.com/user-attachments/assets/301dbfa1-10af-4243-8a5e-6d3f4487a8d2" />
+<img width="1786" height="836" alt="Screenshot 2026-04-19 014211" src="https://github.com/user-attachments/assets/b1699ddb-a12e-4a50-a45a-ea16b9c097a5" />
+<img width="1810" height="828" alt="Screenshot 2026-04-19 014200" src="https://github.com/user-attachments/assets/37844401-d10d-4057-84d8-57ca2354ab47" />
+<img width="1769" height="824" alt="Screenshot 2026-04-19 014146" src="https://github.com/user-attachments/assets/69aa747e-9aa1-4262-bea7-7dce41be782a" />
+<img width="1802" height="843" alt="Screenshot 2026-04-19 014110" src="https://github.com/user-attachments/assets/05fa2968-235b-432a-96a7-03bfa34103e5" />
 
 ## ✨ Key Features
 
